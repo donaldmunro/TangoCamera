@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout
+      xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:tools="http://schemas.android.com/tools"
+      android:id="@+id/main_view"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      >
+
+   <TextView
+         android:id="@+id/init_text"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_gravity="center"
+         android:text="Please Wait - Initializing Tango (May take some time)\n"
+         android:maxLength="8192"
+         android:singleLine="false"
+         android:lines="5"
+         android:maxLines="5"
+         android:textSize="18sp"
+         android:background="@drawable/redborder"
+         android:visibility="visible"
+         />
+   <android.opengl.GLSurfaceView
+         android:id="@+id/surfaceview"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_gravity="top"
+         android:visibility="gone"
+         />
+
+   <RelativeLayout
+         android:id="@+id/buttonLayout"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_gravity="bottom"
+         tools:context=".MainActivity"
+         >
+
+      <ImageButton
+            android:id="@+id/set_origin"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/set_origin"
+            android:src="@drawable/coords3d"
+            android:onClick="clickedSetOrigin"
+            android:background="@null"
+            android:visibility="gone"
+            />
+
+      <ImageButton
+            android:id="@+id/take_photo"
+            android:layout_toRightOf="@+id/set_origin"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/take_photo"
+            android:src="@drawable/take_photo_selector"
+            android:onClick="clickedTakePhoto"
+            android:layout_centerVertical="true"
+            android:background="@null"
+            android:visibility="gone"
+            />
+
+      <ImageButton
+            android:id="@+id/prefs"
+            android:layout_toRightOf="@+id/take_photo"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:padding="10dp"
+            android:paddingStart="100dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/prefs"
+            android:src="@drawable/preferences"
+            android:onClick="clickedPrefs"
+            android:layout_centerVertical="true"
+            android:background="@null"
+            android:visibility="gone"
+            />
+
+      <ImageButton
+            android:id="@+id/exeunt"
+            android:layout_alignParentEnd="true"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="Exit"
+            android:src="@drawable/exit"
+            android:onClick="exit"
+            android:layout_centerVertical="true"
+            android:background="@null"
+            />
+   </RelativeLayout>
+</FrameLayout>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent">
+   <CheckBoxPreference android:title="Point Clouds On"
+                       android:defaultValue="true"
+                       android:summary="Store point clouds in addition to images."
+                       android:key="pointclouds" />
+   <EditTextPreference
+         android:key="confidence"
+         android:title="Min Point Cloud Confidence (0-1)"
+         android:summary="Minimum confidence value for vertex to be saved (Between 0.0 and 1.0)"
+         android:defaultValue="0.5"
+         android:numeric="decimal"
+         />
+   <CheckBoxPreference android:title="Write Confidence Value"
+                       android:defaultValue="false"
+                       android:summary="Save confidence value to .ply file as 4th element of vertex."
+                       android:key="write_confidence" />
+   <CheckBoxPreference android:title="Gravity Sensor On"
+                       android:defaultValue="true"
+                       android:summary="Android gravity sensor on."
+                       android:key="gravity" />
+   <CheckBoxPreference android:title="Accelerometer Sensor On."
+                       android:defaultValue="false"
+                       android:summary="Android accelerometer on."
+                       android:key="acceleration" />
+   <Preference android:title="OK"
+               android:key="done"
+         />
+
+</PreferenceScreen>

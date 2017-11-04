@@ -1,0 +1,65 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion '26.0.2'
+    defaultConfig {
+        applicationId "to.ar.tango.tangocamera"
+        minSdkVersion 23
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild
+                {
+                    cmake { cppFlags "-fexceptions" }
+                }
+        ndk { abiFilters 'armeabi-v7a', 'arm64-v8a' }
+    }
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            jniLibs.srcDirs = ['libs']
+            jni.srcDirs = ['c++']
+            resources.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['rs']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+        }
+        test { java.srcDirs = ['test'] }
+        androidTest { java.srcDirs = ['androidTest'] }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake { path "CMakeLists.txt" }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    //    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'com.google.tango:sdk-base:1.54'
+    compile 'com.google.tango:support-base:1.54'
+
+
+//    compile 'com.android.support:appcompat-v7:26.0.2'
+    // Snackbar at top (https://github.com/AndreiD/TSnackBar)
+    compile 'com.androidadvance:topsnackbar:1.1.1'
+
+
+    testImplementation 'junit:junit:4.12'
+    //    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    //    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}
