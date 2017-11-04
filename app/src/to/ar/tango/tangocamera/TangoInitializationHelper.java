@@ -12,6 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+
+ Modified version by Donald Munro (2017) released under the abovementioned
+ license (Apache License, Version 2.0).
  */
 
 package to.ar.tango.tangocamera;
@@ -38,6 +41,10 @@ public class TangoInitializationHelper
    public static final int ARCH_ARM32 = 2;
    public static final int ARCH_X86_64 = 3;
    public static final int ARCH_X86 = 4;
+
+   static public String[] ABIS = { "default", "arm64-v8a", "armeabi-v7a", "x86_64", "x86"};
+   static public File[] DIRS = { new File("/data/data/com.google.tango/libfiles/"),
+                                 new File("/data/data/com.projecttango.tango/libfiles/") };
 
    /**
     * Only for apps using the C API:
@@ -104,10 +111,6 @@ public class TangoInitializationHelper
     * @return returns the loaded architecture id.
     */
    public static final String loadTangoSharedLibrary() { return loadTangoSharedLibrary(null, "libtango_client_api.so"); }
-
-   static public String[] ABIS = { "default", "arm64-v8a", "armeabi-v7a", "x86_64", "x86"};
-   static public File[] DIRS = { new File("/data/data/com.google.tango/libfiles/"),
-                                 new File("/data/data/com.projecttango.tango/libfiles/") };
 
    public static final String loadTangoSharedLibrary(File libBase, String libname)
    //-----------------------------------------------------------------------------
