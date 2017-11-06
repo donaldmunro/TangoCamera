@@ -49,6 +49,8 @@ import java.io.StringWriter;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 import static java.lang.Math.abs;
@@ -87,7 +89,9 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
       Matrix.setIdentityM(I, 0);
       SensorManager.remapCoordinateSystem(I, androidXAxis, androidYAxis, IR);
 
-      String name = String.format(Locale.ENGLISH, "%.09f", activity.imageTimestamp);
+      Date now = new Date();
+      SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss.SSS");
+      String name = String.format(Locale.ENGLISH, "%s-%.09f", sdf.format(now), activity.imageTimestamp);
       File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
                           "/TangoCamera");
       if (!dir.exists())
