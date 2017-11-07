@@ -21,4 +21,4 @@ The settings button in the app allows modification to the default settings inclu
 
 The only other element of the UI requiring some explanation is the leftmost button which can be used to reset the Tango pose origin (calls TangoService_resetMotionTracking).
 
-TangoCamera should also be uploaded to the Google Play Store soon.
+TangoCamera is available from the Google Play Store at [https://play.google.com/store/apps/details?id=to.ar.tango.tangocamera&hl=en](https://play.google.com/store/apps/details?id=to.ar.tango.tangocamera&hl=en)
