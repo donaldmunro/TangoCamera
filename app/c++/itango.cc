@@ -25,7 +25,10 @@ SOFTWARE.
 #include <vector>
 #include <memory>
 #include <atomic>
+#include <chrono>
+#include <thread>
 
+#include <string.h>
 #include <sys/time.h>
 #include <jni.h>
 
@@ -435,7 +438,19 @@ Java_to_ar_tango_tangocamera_ITango_resetPoseStart(JNIEnv *env, jclass type)
    if (connected)
    {
       TangoService_resetMotionTracking();
-      return JNI_TRUE;
+      uint64_t  starttime = uptime();
+      TangoCoordinateFramePair frames_of_reference;
+      frames_of_reference.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
+      frames_of_reference.target = TANGO_COORDINATE_FRAME_DEVICE;
+      TangoPoseData pose;
+      while ((uptime() - starttime) <= 5000000000LL)
+      {
+         TangoErrorType ret = TangoService_getPoseAtTime(0, frames_of_reference, &pose);
+         if ( (ret == TANGO_SUCCESS) && (pose.status_code == TANGO_POSE_VALID) )
+            return JNI_TRUE;
+         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+      ALOGW("resetPoseStart timed out");
    }
    return JNI_FALSE;
 }
