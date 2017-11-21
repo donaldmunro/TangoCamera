@@ -238,6 +238,7 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
          if (ITango.nativeIntrinsics(ITango.TangoCameraId.TANGO_CAMERA_COLOR.ordinal(), fx, fy, cx, cy, w, h,
                                      hfov, vfov, distortion))
          {
+            pw.println("# Intrinsics for default (color) camera");
             pw.printf("fx: %.9f", fx[0]); pw.println();
             pw.printf("fy: %.9f", fy[0]); pw.println();
             pw.printf("cx: %.9f", cx[0]); pw.println();
@@ -248,6 +249,23 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
             pw.printf("FOVv: %.9f", vfov[0]); pw.println();
             pw.printf("imagewidth: %d", w[0]); pw.println();
             pw.printf("imageheight: %d", h[0]); pw.println();
+            pw.println();
+         }
+         if (ITango.nativeIntrinsics(ITango.TangoCameraId.TANGO_CAMERA_DEPTH.ordinal(), fx, fy, cx, cy, w, h,
+                                     hfov, vfov, distortion))
+         {
+            pw.println("# Intrinsics for depth camera");
+            pw.printf("d_fx: %.9f", fx[0]); pw.println();
+            pw.printf("d_fy: %.9f", fy[0]); pw.println();
+            pw.printf("d_cx: %.9f", cx[0]); pw.println();
+            pw.printf("d_cy: %.9f", cy[0]); pw.println();
+            pw.printf("d_distortion: [%.9f, %.9f, %.9f, %.9f, %.9f]", distortion[0], distortion[1],
+                      distortion[2], distortion[3], distortion[4]); pw.println();
+            pw.printf("d_FOVh: %.9f", hfov[0]); pw.println();
+            pw.printf("d_FOVv: %.9f", vfov[0]); pw.println();
+            pw.printf("d_imagewidth: %d", w[0]); pw.println();
+            pw.printf("d_imageheight: %d", h[0]); pw.println();
+            pw.println();
          }
          pw.println("# device rotation (0 = portrait for all phones and many tablets)");
          pw.print("deviceRotation: ");
@@ -258,13 +276,28 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
             case Surface.ROTATION_180: pw.println("180"); break;
             case Surface.ROTATION_270: pw.println("270"); break;
          }
-         pw.println("# pose rotation quaternion [w, x, y, z]");
-         pw.printf("rotation: [%.9f, %.9f, %.9f, %.9f]", activity.rotationW, activity.rotationX,
+         pw.println("# pose rotation quaternion [w, x, y, z] not corrected for device orientation");
+         pw.printf("rawRotation: [%.9f, %.9f, %.9f, %.9f]", activity.rotationW, activity.rotationX,
                    activity.rotationY, activity.rotationZ);
          pw.println();
-         pw.println("# pose translation [x, y, z]");
-         pw.printf("translation: [%.9f, %.9f, %.9f]", activity.translationX, activity.translationY,
+         float[] Rin = quaternionToMatrix((float)activity.rotationW, (float)activity.rotationX,
+                                          (float)activity.rotationY, (float)activity.rotationZ);
+         float[] R = new float[16];
+         SensorManager.remapCoordinateSystem(Rin, androidXAxis, androidYAxis, R);
+         float[] Q = matrixToQuaternion(R);
+         pw.println("# pose rotation quaternion [w, x, y, z] corrected for device orientation");
+         pw.printf("rotation: [%.9f, %.9f, %.9f, %.9f]", Q[0], Q[1], Q[2], Q[3]);
+         pw.println();
+         pw.println("# pose translation [x, y, z] not corrected for device rotation");
+         pw.printf("rawTranslation: [%.9f, %.9f, %.9f]", activity.translationX, activity.translationY,
                    activity.translationZ);
+         pw.println();
+         pw.println("# pose translation [x, y, z] corrected for device rotation");
+         double[] v = new double[] { activity.translationX, activity.translationY,
+                                     activity.translationZ };
+         double[] T = correct(v);
+         pw.printf("translation: [%.9f, %.9f, %.9f]", T[0], T[1], T[2]);
+
          pw.println();
          double [] vec = null;
          if (isGravity)
@@ -458,5 +491,78 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
       Matrix.multiplyMV(cooked, 0, IR, 0, raw, 0);
       vec[0] = cooked[0]; vec[1] = cooked[1]; vec[2] = cooked[2];
       return vec;
+   }
+
+   static public float[] quaternionToMatrix(float w, float x, float y, float z)
+   //-------------------------------------------------------------------------
+   {
+      float norm = w * w + x * x + y * y + z * z;
+      float s = (norm > 0f) ? 2f / norm : 0;
+      float xs = x * s;
+      float ys = y * s;
+      float zs = z * s;
+      float xx = x * xs;
+      float xy = x * ys;
+      float xz = x * zs;
+      float xw = w * xs;
+      float yy = y * ys;
+      float yz = y * zs;
+      float yw = w * ys;
+      float zz = z * zs;
+      float zw = w * zs;
+      float[] M = new float[16];
+      M[0] = 1 - (yy + zz); M[4] = (xy - zw);     M[8] = (xz + yw);      M[12] = 0;
+      M[1] = (xy + zw);     M[5] = 1 - (xx + zz); M[9] = (yz - xw);      M[13] = 0;
+      M[2] = (xz - yw);     M[6] = (yz + xw);     M[10] = 1 - (xx + yy); M[14] = 0;
+      M[3] = 0;             M[7] = 0;             M[11] = 0;             M[15] = 1;
+      return M;
+   }
+
+   static public float[] matrixToQuaternion(float[] M)
+   //-------------------------------------------------
+   {
+      float m00 = M[0], m01 = M[4], m02 = M[8];
+      float m10 = M[1], m11 = M[5], m12 = M[9];
+      float m20 = M[2], m21 = M[6], m22 = M[10];
+
+      float t = m00 + m11 + m22, w, x, y, z;
+
+      if (t >= 0)
+      {
+         float s = (float) Math.sqrt(t + 1);
+         w = 0.5f * s;
+         s = 0.5f / s;
+         x = (m21 - m12) * s;
+         y = (m02 - m20) * s;
+         z = (m10 - m01) * s;
+      }
+      else if ((m00 > m11) && (m00 > m22))
+      {
+         float s = (float) Math.sqrt(1.0f + m00 - m11 - m22);
+         x = s * 0.5f; // |x| >= .5
+         s = 0.5f / s;
+         y = (m10 + m01) * s;
+         z = (m02 + m20) * s;
+         w = (m21 - m12) * s;
+      }
+      else if (m11 > m22)
+      {
+         float s = (float) Math.sqrt(1.0f + m11 - m00 - m22);
+         y = s * 0.5f; // |y| >= .5
+         s = 0.5f / s;
+         x = (m10 + m01) * s;
+         z = (m21 + m12) * s;
+         w = (m02 - m20) * s;
+      }
+      else
+      {
+         float s = (float) Math.sqrt(1.0f + m22 - m00 - m11); // |s|>=1
+         z = s * 0.5f; // |z| >= .5
+         s = 0.5f / s;
+         x = (m02 + m20) * s;
+         y = (m21 + m12) * s;
+         w = (m10 - m01) * s;
+      }
+      return new float[] {w, x, y, z};
    }
 }

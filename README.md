@@ -1,4 +1,8 @@
 # TangoCamera
+**New 2017-11-21**: Changed YAML file/EXIF tag to also include:
+- Depth camera intrinsics,
+- Pose rotation corrected for device orientation,
+- Pose translation corrected for device orientation.
 
 TangoCamera is an open source developers tool for saving images,
 pointclouds and associated Tango pose and Android sensor data which may
