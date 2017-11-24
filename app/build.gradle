@@ -7,8 +7,8 @@ android {
         applicationId "to.ar.tango.tangocamera"
         minSdkVersion 23
         targetSdkVersion 23
-        versionCode 3
-        versionName "1.02"
+        versionCode 5
+        versionName "1.04"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild
                 {

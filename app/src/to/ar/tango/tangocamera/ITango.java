@@ -54,10 +54,12 @@ public class ITango
 
    public static native double lastTimestamp();
 
-   public static native boolean nativeIntrinsics(int cameraId, double[] fx, double[] fy,
-                                                 double[] cx, double[] cy,
-                                                 int[] pixelHeight, int[] pixelWidth,
-                                                 double[] hFOV, double[] vFOV, double[] distortion);
+   public static native boolean intrinsics(int cameraId, double[] fx, double[] fy,
+                                           double[] cx, double[] cy,
+                                           int[] pixelHeight, int[] pixelWidth,
+                                           double[] hFOV, double[] vFOV, double[] distortion);
+
+   public static native boolean IMU2CameraPose(int cameraId, double[] rotation, double[] translation);
 
    public static native void renderInit();
 
@@ -79,7 +81,7 @@ public class ITango
       for (TangoCameraId id : TangoCameraId.values())
       {
          int cameraid = id.ordinal();
-         if (nativeIntrinsics(cameraid, fx_, fy_, cx_, cy_, height_, width_, hfov_, vfov_, distortion_))
+         if (intrinsics(cameraid, fx_, fy_, cx_, cy_, height_, width_, hfov_, vfov_, distortion_))
          {
             if (cameras == null)
                cameras = new HashMap<>();

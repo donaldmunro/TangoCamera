@@ -31,6 +31,7 @@ SOFTWARE.
 #include <string.h>
 #include <sys/time.h>
 #include <jni.h>
+#include <tango_client_api.h>
 
 #include "tango_client_api.h"
 #include "tango_support_api.h"
@@ -502,11 +503,11 @@ Java_to_ar_tango_tangocamera_ITango_isDepth(JNIEnv *env, jclass type)
 
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_to_ar_tango_tangocamera_ITango_nativeIntrinsics(JNIEnv *env, jclass klass, jint cameraId,
-                                                     jdoubleArray fx_, jdoubleArray fy_, jdoubleArray cx_,
-                                                     jdoubleArray cy_, jintArray height_,
-                                                     jintArray width_, jdoubleArray hFOV_,
-                                                     jdoubleArray vFOV_, jdoubleArray distortion_)
+Java_to_ar_tango_tangocamera_ITango_intrinsics(JNIEnv *env, jclass klass, jint cameraId,
+                                               jdoubleArray fx_, jdoubleArray fy_, jdoubleArray cx_,
+                                               jdoubleArray cy_, jintArray height_,
+                                               jintArray width_, jdoubleArray hFOV_,
+                                               jdoubleArray vFOV_, jdoubleArray distortion_)
 //--------------------------------------------------------------------------------------------------------
 {
    jboolean ret = JNI_FALSE;
@@ -549,6 +550,52 @@ Java_to_ar_tango_tangocamera_ITango_nativeIntrinsics(JNIEnv *env, jclass klass, 
    env->ReleaseDoubleArrayElements(distortion_, distortion, 0);
    return ret;
 }
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_to_ar_tango_tangocamera_ITango_IMU2CameraPose(JNIEnv *env, jclass type, jint cameraId,
+                                                   jdoubleArray rotation_, jdoubleArray translation_)
+//--------------------------------------------------------------------------------------
+{
+   TangoCoordinateFramePair frames_of_reference;
+   frames_of_reference.base = TANGO_COORDINATE_FRAME_IMU;
+   switch (cameraId)
+   {
+      case TANGO_CAMERA_COLOR:   frames_of_reference.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR; break;
+      case TANGO_CAMERA_DEPTH:   frames_of_reference.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH; break;
+      case TANGO_CAMERA_FISHEYE: frames_of_reference.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE; break;
+      default: return JNI_FALSE;
+   }
+   jdouble *rotation = nullptr, *translation = nullptr;
+   if ( (! env->IsSameObject(rotation_, nullptr)) && (env -> GetArrayLength(rotation_) >= 4) )
+      rotation = env->GetDoubleArrayElements(rotation_, NULL);
+   if ( (! env->IsSameObject(translation_, nullptr)) && (env -> GetArrayLength(translation_) >= 3) )
+      translation = env->GetDoubleArrayElements(translation_, NULL);
+   TangoPoseData pose;
+   TangoErrorType ret = TangoService_getPoseAtTime(0.0, frames_of_reference, &pose);
+   if (ret == TANGO_SUCCESS)
+   {
+      if (rotation != nullptr)
+      {
+         rotation[0] = pose.orientation[3];
+         rotation[1] = pose.orientation[0];
+         rotation[2] = pose.orientation[1];
+         rotation[3] = pose.orientation[2];
+      }
+      if (translation != nullptr)
+      {
+         translation[0] = pose.translation[0];
+         translation[1] = pose.translation[1];
+         translation[2] = pose.translation[2];
+      }
+   }
+   if (rotation != nullptr)
+      env->ReleaseDoubleArrayElements(rotation_, rotation, 0);
+   if (translation != nullptr)
+      env->ReleaseDoubleArrayElements(translation_, translation, 0);
+   return (ret == TANGO_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+}
+
 
 extern "C"
 JNIEXPORT void JNICALL

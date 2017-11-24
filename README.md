@@ -1,4 +1,9 @@
 # TangoCamera
+**New 2017-11-24**: Added a HOWTO for creating a filtered 3D point cloud for some given object at
+[https://donaldmunro.github.io/TangoCamera-Example.html](https://donaldmunro.github.io/TangoCamera-Example.html).
+Also added the IMU to camera poses (see ["Coordinate frames for component alignment"](https://developers.google.com/tango/overview/frames-of-reference#coordinate_frames_for_component_alignment)) to
+the YAML file.
+
 **New 2017-11-21**: Changed YAML file/EXIF tag to also include:
 - Depth camera intrinsics,
 - Pose rotation corrected for device orientation,
@@ -24,5 +29,10 @@ The default settings will, when taking a photograph,
 The settings button in the app allows modification to the default settings including disabling storage of pointclouds, specifying minimum confidence probabilities for point cloud vertices to be stored, whether the confidence value should be stored as a 4th point in the .ply file and whether to also store the Android accelerometer sensor vectors.
 
 The only other element of the UI requiring some explanation is the leftmost button which can be used to reset the Tango pose origin (calls TangoService_resetMotionTracking).
+
+The files created by TangoCamera are stored in DCIM/TangoCamera eg /sdcard/DCIM/TangoCamera.
+
+A HOWTO for creating a filtered 3D point cloud for some given object is available at
+[https://donaldmunro.github.io/TangoCamera-Example.html](https://donaldmunro.github.io/TangoCamera-Example.html)
 
 TangoCamera is available from the Google Play Store at [https://play.google.com/store/apps/details?id=to.ar.tango.tangocamera&hl=en](https://play.google.com/store/apps/details?id=to.ar.tango.tangocamera&hl=en)

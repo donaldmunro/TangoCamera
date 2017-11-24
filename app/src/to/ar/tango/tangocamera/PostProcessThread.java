@@ -235,8 +235,8 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
          pw.println("# camera intrinsics");
          double fx[] = new double[1], fy[] = new double[1], cx[] = new double[1], cy[] = new double[1],
                hfov[] = new double[1], vfov[] = new double[1], distortion[] = new double[5];
-         if (ITango.nativeIntrinsics(ITango.TangoCameraId.TANGO_CAMERA_COLOR.ordinal(), fx, fy, cx, cy, w, h,
-                                     hfov, vfov, distortion))
+         if (ITango.intrinsics(ITango.TangoCameraId.TANGO_CAMERA_COLOR.ordinal(), fx, fy, cx, cy, w, h,
+                               hfov, vfov, distortion))
          {
             pw.println("# Intrinsics for default (color) camera");
             pw.printf("fx: %.9f", fx[0]); pw.println();
@@ -251,8 +251,23 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
             pw.printf("imageheight: %d", h[0]); pw.println();
             pw.println();
          }
-         if (ITango.nativeIntrinsics(ITango.TangoCameraId.TANGO_CAMERA_DEPTH.ordinal(), fx, fy, cx, cy, w, h,
-                                     hfov, vfov, distortion))
+         double[] imuRotation = new double[4], imuTranslation = new double[3];
+         if (ITango.IMU2CameraPose(ITango.TangoCameraId.TANGO_CAMERA_COLOR.ordinal(), imuRotation, imuTranslation))
+         {
+            pw.println("# IMU to camera pose for default (color) camera");
+            writePose(pw, "IMU rotation quaternion [w, x, y, z] not corrected for device orientation",
+                      "IMU rotation quaternion [w, x, y, z] corrected for device orientation",
+                      "imuRawRotation", "imuRotation",
+                       imuRotation[0], imuRotation[1], imuRotation[2], imuRotation[3],
+                      "IMU translation [x, y, z] not corrected for device rotation",
+                      "IMU translation [x, y, z] corrected for device rotation",
+                      "imuRawTranslation", "imuTranslation",
+                      imuTranslation[0], imuTranslation[1], imuTranslation[2]);
+            pw.println();
+
+         }
+         if (ITango.intrinsics(ITango.TangoCameraId.TANGO_CAMERA_DEPTH.ordinal(), fx, fy, cx, cy, w, h,
+                               hfov, vfov, distortion))
          {
             pw.println("# Intrinsics for depth camera");
             pw.printf("d_fx: %.9f", fx[0]); pw.println();
@@ -267,6 +282,20 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
             pw.printf("d_imageheight: %d", h[0]); pw.println();
             pw.println();
          }
+         if (ITango.IMU2CameraPose(ITango.TangoCameraId.TANGO_CAMERA_DEPTH.ordinal(), imuRotation, imuTranslation))
+         {
+            pw.println("# IMU to camera pose for depth camera");
+            writePose(pw, "IMU rotation quaternion [w, x, y, z] not corrected for device orientation",
+                      "IMU rotation quaternion [w, x, y, z] corrected for device orientation",
+                      "d_imuRawRotation", "d_imuRotation",
+                      imuRotation[0], imuRotation[1], imuRotation[2], imuRotation[3],
+                      "IMU translation [x, y, z] not corrected for device rotation",
+                      "IMU translation [x, y, z] corrected for device rotation",
+                      "d_imuRawTranslation", "d_imuTranslation",
+                      imuTranslation[0], imuTranslation[1], imuTranslation[2]);
+            pw.println();
+
+         }
          pw.println("# device rotation (0 = portrait for all phones and many tablets)");
          pw.print("deviceRotation: ");
          switch (activity.deviceRotation)
@@ -276,29 +305,16 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
             case Surface.ROTATION_180: pw.println("180"); break;
             case Surface.ROTATION_270: pw.println("270"); break;
          }
-         pw.println("# pose rotation quaternion [w, x, y, z] not corrected for device orientation");
-         pw.printf("rawRotation: [%.9f, %.9f, %.9f, %.9f]", activity.rotationW, activity.rotationX,
-                   activity.rotationY, activity.rotationZ);
-         pw.println();
-         float[] Rin = quaternionToMatrix((float)activity.rotationW, (float)activity.rotationX,
-                                          (float)activity.rotationY, (float)activity.rotationZ);
-         float[] R = new float[16];
-         SensorManager.remapCoordinateSystem(Rin, androidXAxis, androidYAxis, R);
-         float[] Q = matrixToQuaternion(R);
-         pw.println("# pose rotation quaternion [w, x, y, z] corrected for device orientation");
-         pw.printf("rotation: [%.9f, %.9f, %.9f, %.9f]", Q[0], Q[1], Q[2], Q[3]);
-         pw.println();
-         pw.println("# pose translation [x, y, z] not corrected for device rotation");
-         pw.printf("rawTranslation: [%.9f, %.9f, %.9f]", activity.translationX, activity.translationY,
-                   activity.translationZ);
-         pw.println();
-         pw.println("# pose translation [x, y, z] corrected for device rotation");
-         double[] v = new double[] { activity.translationX, activity.translationY,
-                                     activity.translationZ };
-         double[] T = correct(v);
-         pw.printf("translation: [%.9f, %.9f, %.9f]", T[0], T[1], T[2]);
 
-         pw.println();
+         writePose(pw, "pose rotation quaternion [w, x, y, z] not corrected for device orientation",
+                   "pose rotation quaternion [w, x, y, z] corrected for device orientation",
+                   "rawRotation", "rotation",
+                   activity.rotationW, activity.rotationX, activity.rotationY, activity.rotationZ,
+                   "pose translation [x, y, z] not corrected for device rotation",
+                   "pose translation [x, y, z] corrected for device rotation",
+                   "rawTranslation", "translation",
+                   activity.translationX, activity.translationY, activity.translationZ);
+
          double [] vec = null;
          if (isGravity)
          {
@@ -341,6 +357,45 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
          return null;
       }
       return sw.toString();
+   }
+
+   private void writePose(PrintWriter pw, String rawOrientationComment, String cookedOrientationComment,
+                          String rawRotationKey, String cookedRotationKey,
+                          double rotationW, double rotationX, double rotationY, double rotationZ,
+                          String rawTranslationComment, String cookedTranslationComment,
+                          String rawTranslationKey, String cookedTranslationKey,
+                          double translationX, double translationY, double translationZ)
+   //---------------------------------------------------------------------------------------------
+   {
+      float[] Rin, R = new float[16], Q;
+      pw.println("# " + rawOrientationComment);
+      pw.printf("%s: [%.9f, %.9f, %.9f, %.9f]", rawRotationKey, rotationW, rotationX, rotationY, rotationZ);
+      pw.println();
+      Rin = quaternionToMatrix((float) rotationW, (float) rotationX, (float) rotationY, (float) rotationZ);
+      SensorManager.remapCoordinateSystem(Rin, androidXAxis, androidYAxis, R);
+      Q = matrixToQuaternion(R);
+      pw.println("# pose rotation quaternion [w, x, y, z] corrected for device orientation");
+      pw.printf("%s: [%.9f, %.9f, %.9f, %.9f]", cookedRotationKey, Q[0], Q[1], Q[2], Q[3]);
+      pw.println();
+      pw.println("# " + rawTranslationComment);
+      pw.printf("%s: [%.9f, %.9f, %.9f]", rawTranslationKey, translationX, translationY, translationZ);
+      pw.println();
+      pw.println("# " + cookedTranslationComment);
+      double[] v = new double[] {translationX, translationY, translationZ};
+      double[] T = correct(v);
+      pw.printf("%s: [%.9f, %.9f, %.9f]",cookedTranslationKey, T[0], T[1], T[2]);
+      pw.println();
+   }
+
+   private double[] correct(double[] vec)
+   //------------------------------------
+   {
+      // Values from 0 to 9.xxx should fit in float, it seems like overkill to add la4j or jblas for a few matrix multiplies
+      float[] raw = new float[4], cooked = new float[4];
+      raw[0] = (float) vec[0]; raw[1] = (float) vec[1]; raw[2] = (float) vec[2]; raw[3] = 0;
+      Matrix.multiplyMV(cooked, 0, IR, 0, raw, 0);
+      vec[0] = cooked[0]; vec[1] = cooked[1]; vec[2] = cooked[2];
+      return vec;
    }
 
    private boolean saveEXIF(File imageFile, String yaml, int imagewidth, int imageheight)
@@ -480,17 +535,6 @@ class PostProcessThread extends AsyncTask<Void, String, Boolean>
       if (index < 0)
          return null;
       return values[index];
-   }
-
-   private double[] correct(double[] vec)
-   //------------------------------------
-   {
-      // Values from 0 to 9.xxx should fit in float, it seems like overkill to add la4j or jblas for a few matrix multiplies
-      float[] raw = new float[4], cooked = new float[4];
-      raw[0] = (float) vec[0]; raw[1] = (float) vec[1]; raw[2] = (float) vec[2]; raw[3] = 0;
-      Matrix.multiplyMV(cooked, 0, IR, 0, raw, 0);
-      vec[0] = cooked[0]; vec[1] = cooked[1]; vec[2] = cooked[2];
-      return vec;
    }
 
    static public float[] quaternionToMatrix(float w, float x, float y, float z)
