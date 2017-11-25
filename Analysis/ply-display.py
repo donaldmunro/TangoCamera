@@ -46,7 +46,6 @@ def main(argv=None):
    plot3d.set_ylabel('Z')
    plot3d.set_zlabel('Y')
    plt.show()
-   time.sleep(10)
 
 if __name__ == '__main__':
    sys.exit(main())
